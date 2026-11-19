@@ -1,0 +1,36 @@
+# Spec of the gatedtrain 0.3.0 amendment registration-v2-gatedtrain.yaml (post hoc); otherwise spec-v2.yaml.
+# Area "video generation" workflow, attempt 2 (amendment; registration-v2.yaml, short targets <= 2 words, items-short/ and
+# prompts-short/, train_flow_grpo_wan_v2.py full2). Attempt 1 header follows.
+# Area "video generation" workflow: Flow-GRPO + LoRA on Wan2.1-T2V-1.3B (minimal port train_flow_grpo_wan.py), OCR
+# text rendering in video, gated on docTR OCR accuracy (all 17 frames) of 400 held-out prompts against the base alone
+# (MULTIMODAL-SPEC row 3 and its deviations). prototype,
+# unpromotable.
+# base: Wan-AI/Wan2.1-T2V-1.3B-Diffusers @ 0fad780a (21 files); prompts: the training shard (byte copy of area 5's,
+# 18,359 prompts, disjoint from the items by prompt and target text); items: the registered set (400, byte copy of area
+# 5's). All inside the read-only area3-video mount. `gatedtrain run` refuses this spec.
+workflow: mm-a3-video-flow-grpo-wan
+version: 1
+budget: {gpu_hours: 24}
+artifacts:
+  base:         {type: model_checkpoint, uri: "file:<data-root>/flow-grpo-wan-video/runtime/models/wan2.1-t2v-1.3b@sha256:e2fd9ee4477817f9823b772652f5b1eef9021e0b928bcf42f951c96fe23933be"}
+  prompts:      {type: training_dataset, uri: "file:<data-root>/flow-grpo-wan-video/runtime/prompts-short@sha256:e8a940b54b57a709d648842272ba3e7d0e50fe0d107bc8e40100ef2f571d52ac"}
+  items:        {type: item_set, uri: "file:<data-root>/flow-grpo-wan-video/runtime/items-short@sha256:da3c385bc840137129ed04e1ebde64fc2f3e2b3540017a3d8c0c24e79018afa2", disjoint_from: [prompts]}
+  trainer_cfg:  {type: trainer_config, uri: "file:trainer.yaml@sha256:8a390dd0c017447a665ec32d04212e96196cea2f0be39bfed8e2a148ccada95e"}
+  registration: {type: registration, uri: "file:registration-v2-gatedtrain.yaml@sha256:3e7ad31c69fac4b5cc16a7730896ae8e40ac9439260b28f48f0c54b9ac3591f7"}
+stages:
+  - id: rl
+    uses: rl.flow_grpo_wan@0.1
+    algorithm: flow_grpo
+    model_family: t2v.wan_lora@0.1
+    inputs: {model: base, data: prompts, config: trainer_cfg}
+    outputs: {model: rl_ckpt}
+  - id: quality_gate
+    uses: gate.superiority@1.0
+    evaluator: t2v.wan_ocr_doctr_items@0.1
+    sampler: deployment
+    inputs: {model: rl_ckpt, baseline: base, items: items, registration: registration}
+    # mde equals the registration's planning_effect (G-4).
+    test: {metric: ocr_b_acc, alpha: 0.025, power: 0.80, mde: 0.045, cluster_by: item, seeds: 1}
+    on_fail: stop
+    owner: skeleton-demo
+    escalation: [skeleton-demo-lead]

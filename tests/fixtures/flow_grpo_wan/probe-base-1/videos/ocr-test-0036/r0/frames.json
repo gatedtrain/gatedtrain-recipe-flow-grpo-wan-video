@@ -1,0 +1,78 @@
+{
+  "format": "PNG, RGB uint8, lossless",
+  "frames": [
+    {
+      "path": "frame_00.png",
+      "sha256": "sha256:c3f9629bba3ee5b9d3db82f96b83db97c24f580facecb7f9ea319599b5293359"
+    },
+    {
+      "path": "frame_01.png",
+      "sha256": "sha256:de40258ad3d2b6e0a5574c0b52e10da549763eb1713d3be20c30898ffe1a04bc"
+    },
+    {
+      "path": "frame_02.png",
+      "sha256": "sha256:ad8d1bd75fa6f2d7a2cad1cd53ae72bb18865be5616dedbdb8c1d3084c8ce138"
+    },
+    {
+      "path": "frame_03.png",
+      "sha256": "sha256:9cff6902f450487739466454609653fff7ac5e5ee2d4af0bd8f95740b0e44e5f"
+    },
+    {
+      "path": "frame_04.png",
+      "sha256": "sha256:e74fa2bf44f7eb226820aaf8bf27eaa9b1edd0e570af51dc5a8fc8c0cfa90c5a"
+    },
+    {
+      "path": "frame_05.png",
+      "sha256": "sha256:b13aebb52bdc0f00c7e5951b34cf55f69450800f78d92ed8adf592e4e599c860"
+    },
+    {
+      "path": "frame_06.png",
+      "sha256": "sha256:9647d31a261feda4ffe8c294136328de91675c698dc79fbc3066713c68cef3e6"
+    },
+    {
+      "path": "frame_07.png",
+      "sha256": "sha256:432e36398194cb0fecbd77a6df5187e56281b5c1f4f15a8b47abaae99c70f3b6"
+    },
+    {
+      "path": "frame_08.png",
+      "sha256": "sha256:9a1817ccaca4aaf4e06369fca276790a2e9c0ca8261270f5a5f63481c0f9f9a7"
+    },
+    {
+      "path": "frame_09.png",
+      "sha256": "sha256:bb9c6000cb9ec26cd2f0395c3a3efd8324aa20b71abd5423842c42d15d6870d7"
+    },
+    {
+      "path": "frame_10.png",
+      "sha256": "sha256:a3d4f03244241a8552e53eed6273dfe2c9384fe17e737db52bb6124988eca1d0"
+    },
+    {
+      "path": "frame_11.png",
+      "sha256": "sha256:8d8f659617d53a5a9d3c23965a619c24395c29ea79e6abeb8e9a46127f5bc931"
+    },
+    {
+      "path": "frame_12.png",
+      "sha256": "sha256:789f408e18739de83352b9936b3df2c75f6e865d9e592daaf2ede42078073578"
+    },
+    {
+      "path": "frame_13.png",
+      "sha256": "sha256:d04e11bf7e0f1abf3aeb2169d9bc4250df16af850e7bfe26cfafb13d399875ae"
+    },
+    {
+      "path": "frame_14.png",
+      "sha256": "sha256:1b84f634094706b886a36a8c09e1a8b837681f9c2e358758390174c221b3c791"
+    },
+    {
+      "path": "frame_15.png",
+      "sha256": "sha256:1926ac852ebc044a991d1273becc27b7404fc5178efd587ea67a40ae82479520"
+    },
+    {
+      "path": "frame_16.png",
+      "sha256": "sha256:5d16984ea9fec902b9e0e8f00cca9d26a61f8233052c5c8bd88e1ca29a879b32"
+    }
+  ],
+  "height": 240,
+  "num_frames": 17,
+  "schema": "ptc_mm.video_frames",
+  "schema_version": "1.0",
+  "width": 416
+}

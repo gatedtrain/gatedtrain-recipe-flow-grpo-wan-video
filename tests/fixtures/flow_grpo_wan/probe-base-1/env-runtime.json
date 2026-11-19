@@ -1,0 +1,25 @@
+{
+  "base": "/srv/ptc/flow-grpo-wan-video/runtime/models/wan2.1-t2v-1.3b",
+  "checkpoint": null,
+  "executable": "/srv/ptc/flow-grpo-sd35-ocr/runtime/.venv/bin/python",
+  "gid": 1000,
+  "items": "/srv/ptc/flow-grpo-wan-video/runtime/items",
+  "items_sha256": "sha256:3884dcff4c2e44d489ef02f6bbcf11f45cc82489d38527e1b8199be35220f3e8",
+  "python": "3.12.16",
+  "sampler_code_sha256": "sha256:dad91e418fe717bf2ad0b3fe2727dfdea36a316b87c2240efc0aa14955d90300",
+  "script_sha256": "sha256:de9c2e89f94b53d05ced25f2aba4c28bed1b295f64c2bcdbb6d3b57dde179641",
+  "torch": "2.15.0+cu132",
+  "uid": 1000,
+  "uv_lock": "/srv/ptc/flow-grpo-sd35-ocr/runtime/uv.lock",
+  "uv_lock_sha256": "sha256:8243b02f8287944026511dff3489f2cb23c91b88a0fd0d7a1b8f22678ece20d7",
+  "versions": {
+    "diffusers": "0.42.1",
+    "levenshtein": "0.27.5",
+    "paddleocr": "2.10.0",
+    "paddlepaddle": "3.0.0",
+    "peft": "0.21.2",
+    "pillow": "13.0.0",
+    "python-doctr": "1.1.0",
+    "transformers": "5.21.0"
+  }
+}

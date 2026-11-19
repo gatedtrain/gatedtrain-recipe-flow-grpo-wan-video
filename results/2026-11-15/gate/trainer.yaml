@@ -1,0 +1,4 @@
+# Area "video generation" trainer config for ext-collect (EXT-2): the adapter and the launch profile.
+# prototype, unpromotable.
+backend: flow_grpo_wan
+profile: full

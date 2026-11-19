@@ -1,0 +1,7 @@
+{
+  "epoch": 2,
+  "global_step": 4,
+  "note": "resume-only information; the run does not resume from a cut (a preempted run restarts)",
+  "samples_consumed": 28,
+  "samples_filtered": 4
+}

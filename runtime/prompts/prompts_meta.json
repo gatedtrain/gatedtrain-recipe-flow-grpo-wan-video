@@ -1,0 +1,31 @@
+{
+  "schema": "ptc_mm.sd35_ocr_train_prompts",
+  "schema_version": "1.0",
+  "source": {
+    "files": {
+      "data-source/ocr/test.txt": "sha256:4dd8caf3ab6ade73bd376c7d14c6ca49b6eacfb1bd321e22c40714ae4a98d4dc",
+      "data-source/ocr/train.txt": "sha256:2eb32ce1c5fd1ffec94070be84252419ec848329d9adde9c2708867882fbce5f"
+    },
+    "origin": "yifan123/flow_grpo@879042cf5707f8b90daa98d147d7deac2317c5da dataset/ocr/{train,test}.txt (MIT)",
+    "target_rule": "flow_grpo ocr.py:32: the first double-quoted span of the prompt"
+  },
+  "split": {
+    "exact_overlap": 0,
+    "generator": "numpy default_rng(SeedSequence([0x5d35a5, split_seed])).permutation over the test prompts that do not occur in train.txt; the first n_items are the items. Training shard: the unique train.txt prompts (first occurrence) without any item prompt and without any prompt whose target (spaces removed, lower case) equals an item's target",
+    "n_items": 400,
+    "n_test": 1018,
+    "n_test_after_exact_overlap": 1017,
+    "n_train_dropped_same_target": 1290,
+    "n_train_lines": 19653,
+    "n_train_shard": 18359,
+    "n_train_unique": 19649,
+    "numpy": "2.5.4",
+    "split_seed": 20261113,
+    "target_overlap": 0
+  },
+  "tags": [
+    "prototype",
+    "unpromotable"
+  ],
+  "train_sha256": "sha256:75361afde0224ac65b1ef03ad96d8d00cb91793c9aa0f52ce50d860801585fb8"
+}

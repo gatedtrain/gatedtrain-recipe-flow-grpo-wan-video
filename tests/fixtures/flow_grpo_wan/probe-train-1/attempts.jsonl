@@ -1,0 +1,2 @@
+{"argv": ["/srv/ptc/flow-grpo-wan-video/runtime/train_flow_grpo_wan.py", "--out", "/out", "--profile", "smoke", "--seed", "5000"], "attempt": 1, "started_at": "2026-11-14T20:20:27Z"}
+{"attempt": 1, "epochs": 2, "finished_at": "2026-11-14T20:32:54Z", "global_step": 4, "samples_consumed": 28, "samples_filtered": 4, "wall_seconds": 746.9}

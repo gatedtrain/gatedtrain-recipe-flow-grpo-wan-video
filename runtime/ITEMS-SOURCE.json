@@ -1,0 +1,45 @@
+{
+  "copies": {
+    "items": {
+      "files": {
+        "item_set_meta.json": {
+          "bytes": 1439,
+          "copy_sha256": "sha256:6b045e9381809e8eb00db8fbbd30689589b345d6873c1f37607c0f45b0fe4c0d",
+          "sha256": "sha256:6b045e9381809e8eb00db8fbbd30689589b345d6873c1f37607c0f45b0fe4c0d",
+          "source": "<sd35-ocr-runtime>/items/item_set_meta.json"
+        },
+        "items.jsonl": {
+          "bytes": 122210,
+          "copy_sha256": "sha256:3884dcff4c2e44d489ef02f6bbcf11f45cc82489d38527e1b8199be35220f3e8",
+          "sha256": "sha256:3884dcff4c2e44d489ef02f6bbcf11f45cc82489d38527e1b8199be35220f3e8",
+          "source": "<sd35-ocr-runtime>/items/items.jsonl"
+        }
+      },
+      "source_dir": "<sd35-ocr-runtime>/items"
+    },
+    "prompts": {
+      "files": {
+        "prompts_meta.json": {
+          "bytes": 1351,
+          "copy_sha256": "sha256:2f7ba3c2523feddc935eda8b4cf5ff9906334d04d6115359203c9df1cd29edf4",
+          "sha256": "sha256:2f7ba3c2523feddc935eda8b4cf5ff9906334d04d6115359203c9df1cd29edf4",
+          "source": "<sd35-ocr-runtime>/prompts/prompts_meta.json"
+        },
+        "train.jsonl": {
+          "bytes": 5774735,
+          "copy_sha256": "sha256:75361afde0224ac65b1ef03ad96d8d00cb91793c9aa0f52ce50d860801585fb8",
+          "sha256": "sha256:75361afde0224ac65b1ef03ad96d8d00cb91793c9aa0f52ce50d860801585fb8",
+          "source": "<sd35-ocr-runtime>/prompts/train.jsonl"
+        }
+      },
+      "source_dir": "<sd35-ocr-runtime>/prompts"
+    }
+  },
+  "rule": "byte-for-byte copies of area 5's registered item set and training shard (README 'Decisions'); not regenerated",
+  "schema": "ptc_mm.video_items_source",
+  "schema_version": "1.0",
+  "tags": [
+    "prototype",
+    "unpromotable"
+  ]
+}

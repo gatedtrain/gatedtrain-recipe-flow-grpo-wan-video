@@ -1,0 +1,39 @@
+{
+  "schema": "ptc_mm.sd35_ocr_train_prompts",
+  "schema_version": "1.0",
+  "source": {
+    "files": {
+      "data-source/ocr/test.txt": "sha256:4dd8caf3ab6ade73bd376c7d14c6ca49b6eacfb1bd321e22c40714ae4a98d4dc",
+      "data-source/ocr/train.txt": "sha256:2eb32ce1c5fd1ffec94070be84252419ec848329d9adde9c2708867882fbce5f"
+    },
+    "origin": "yifan123/flow_grpo@879042cf5707f8b90daa98d147d7deac2317c5da dataset/ocr/{train,test}.txt (MIT)",
+    "source_dir": "<sd35-ocr-runtime>/data-source/ocr",
+    "target_rule": "flow_grpo ocr.py:32: the first double-quoted span of the prompt"
+  },
+  "split": {
+    "exact_overlap": 0,
+    "first_attempt_items_sha256": "sha256:3884dcff4c2e44d489ef02f6bbcf11f45cc82489d38527e1b8199be35220f3e8",
+    "generator": "numpy default_rng(SeedSequence([0x5d35a5, split_seed])).permutation over the test prompts that do not occur in train.txt (area 5's permutation); the items are every candidate with a short target, in permutation order (not sorted). Training shard: the unique train.txt prompts (first occurrence, file order) with a short target, without any item prompt and without any prompt whose target (spaces removed, lower case) equals an item's target",
+    "max_words": 2,
+    "n_items": 288,
+    "n_items_in_first_attempt_items": 106,
+    "n_test": 1018,
+    "n_test_after_exact_overlap": 1017,
+    "n_train_dropped_item_prompt": 0,
+    "n_train_dropped_same_target": 653,
+    "n_train_lines": 19653,
+    "n_train_shard": 5024,
+    "n_train_unique": 19649,
+    "n_train_unique_short": 5677,
+    "numpy": "2.5.4",
+    "order": "items: permutation order (a prefix is a random sample); shard: train.txt file order",
+    "short_rule": "short target: the target has at most 2 whitespace-separated words (len(target.split()) <= 2)",
+    "split_seed": 20261113,
+    "target_overlap": 0
+  },
+  "tags": [
+    "prototype",
+    "unpromotable"
+  ],
+  "train_sha256": "sha256:b1922b27e58eb325319457d6110bc8888f36447514c668f930cfd210043e21a3"
+}

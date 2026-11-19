@@ -1,0 +1,79 @@
+# Amendment for the rename to ptc-hub 0.2.0 (05 section 3.7), post hoc: the scorer runtime/eval_videos.py
+# changed after the gate (publication cleanup; schema id ptc_hub.item_eval), so the deciding evaluator's
+# manifest_hash is the current scorer's and `post_hoc: true` (a PASS is reported INCONCLUSIVE).
+# Amends registration.yaml (sha256:4c39674d7e1d..., the published copy of sha256:aa33a5215d94...,
+# which the gate ran with; RESULT.md "Redacted copies"). The original verdict reproduces with ptc 78eb913
+# and the original files.
+# Area "video generation" pre-registration: Flow-GRPO + LoRA on Wan2.1-T2V-1.3B against the base alone, OCR text
+# rendering in video (MULTIMODAL-SPEC row 3 and its deviations).
+# prototype, unpromotable. Unsigned: no named team has signed it. Values fixed after the smoke run and before the full
+# run started. Deciding T3 metric `ocr_b_acc` (docTR, best-matching-substring edit distance,
+# mean over all 17 frames, zero frames included; higher is better; [0, 1]), blocking, construct-aligned with the
+# PaddleOCR video_ocr reward (R15-1); superiority with margin 0; alpha 0.025 one-sided, power 0.8, m = 1; N 400, K 1,
+# eval seed 11. sigma_plan fixed 0.20 = max(1.5 x ucb80(s_pilot), sqrt(2) x ucb80(s_base)) from the smoke (s_pilot
+# 0.0850 = SD of 40 paired differences, smoke cut 2 minus the base; s_base 0.1266; ucb80 with 39 df factor 1.1137:
+# 0.0947, 0.1410; 1.5 x 0.0947 = 0.142, sqrt(2) x 0.1410 = 0.1994, rounded up). Planning effect 0.03: n_required =
+# ceil(((1.95996 + 0.84162) x 0.20 / 0.03)^2) = 349 <= 400 (MDE at N 400: 0.028). ocr_a_acc (PaddleOCR, the reward's
+# formula, T0) is reported only (t2v.wan_ocr_paddle_items@0.1, not gating). Any later change is an amendment: a new
+# registration with `amends` and a new hash in spec.yaml (05:166).
+registration_version: 1
+registration_id: mm-a3-video-ocr-superiority-v1
+amends: "sha256:4c39674d7e1da922bc90f4db273ce6edeae7038bb8247920459f614770870897"
+signed_by: prototype-unsigned
+created_at: "2026-11-17T17:51:32Z"
+post_hoc: true
+workflow: mm-a3-video-flow-grpo-wan
+gate: quality_gate
+clause:
+  type: superiority
+  metric: ocr_b_acc
+  direction: higher_is_better
+  margin: 0.0
+  alpha: 0.025
+  power: 0.8
+  planning_effect: 0.03
+  sigma_plan: fixed
+  unit: item
+  samples_per_item: 1
+  eval_seeds: [11]
+  interval: cluster_bootstrap
+  blocking: true
+margin_justification: >-
+  Superiority with delta_sup = 0: any held-out gain of mean docTR OCR accuracy over the base video model counts.
+  Prototype value, not reviewed by a named team.
+sigma_pilot:
+  sigma: 0.20
+  source: >-
+    GPU smoke (records/area3-video/train-smoke-1, eval-smoke-base-1, eval-smoke-cut-1): the first 40 registered items,
+    seed 11, the deployment sampler (Euler ODE 20 steps, CFG 4.5, 240x416, 17 frames). Paired differences of
+    ocr_b_acc, smoke cut 2 (4 optimizer steps) minus the base: mean +0.001, SD 0.0850; base item SD 0.1266.
+    sigma_plan = max(1.5 x ucb80(0.0850), sqrt(2) x ucb80(0.1266)) = 0.1994, rounded up to 0.20.
+baseline_pilot_mean: 0.175    # base, first 40 items (sd 0.127, none at 0); the 20-item render probe gave 0.169
+construct_alignment: >-
+  ocr_b_acc measures the construct of the training reward video_ocr_paddleocr (the prompt's quoted text is legibly
+  rendered in the video) with another OCR engine (docTR db_resnet50 + crnn_vgg16_bn, not PaddleOCR PP-OCRv4), another
+  formula (edit distance of the best-matching substring of the recognized text) and another aggregate (the mean over
+  all 17 frames, frames that read nothing included, not the mean of the positive scores of every 4th frame). A pass
+  shows that the reward's gain transfers to an independent OCR engine over the whole clip, not that the videos are
+  better otherwise (motion, fidelity and prompt adherence beyond the text are not measured).
+eval_distribution:
+  item_set_hash: "sha256:0b01553c4c74ef18c9954dca686c8edc00b18e20e3d43346265858303d8ad4a7"   # manifest of runtime/items/ (byte copy of area 5's)
+# The deployment sampler (every cut's sampler.json; eval_videos.py uses it unchanged).
+sampler: {"autocast": "bfloat16", "cfg": "two transformer calls (prompt, negative prompt), combined in float32", "decode": "latents * latents_std + latents_mean, VAE decode, (x / 2 + 0.5) clamped to [0, 1], uint8 = round(x * 255)", "deterministic": true, "guidance_scale": 4.5, "height": 240, "latents_dtype": "float32", "max_sequence_length": 512, "negative_prompt": "", "noise": "per sample: torch.Generator('cpu').manual_seed(seed); initial latents, then one draw per step when not deterministic", "num_frames": 17, "num_steps": 20, "pipeline": "flow_grpo wan_pipeline_with_logprob (ported)", "prompt_embedding": "flow_grpo wan_prompt_embedding.py: no prompt cleaning, cut at the attention mask, zero-padded to max_sequence_length", "scheduler": "UniPCMultistepScheduler (sigma table and index_for_timestep only)", "scheduler_config": {"_class_name": "UniPCMultistepScheduler", "_diffusers_version": "0.33.0.dev0", "_use_default_values": ["shift_terminal", "sigma_max", "sigma_min", "time_shift_type", "use_dynamic_shifting"], "beta_end": 0.02, "beta_schedule": "linear", "beta_start": 0.0001, "disable_corrector": [], "dynamic_thresholding_ratio": 0.995, "final_sigmas_type": "zero", "flow_shift": 3.0, "lower_order_final": true, "num_train_timesteps": 1000, "predict_x0": true, "prediction_type": "flow_prediction", "rescale_betas_zero_snr": false, "sample_max_value": 1.0, "shift_terminal": null, "sigma_max": null, "sigma_min": null, "solver_order": 2, "solver_p": null, "solver_type": "bh2", "steps_offset": 0, "thresholding": false, "time_shift_type": "exponential", "timestep_spacing": "linspace", "trained_betas": null, "use_beta_sigmas": false, "use_dynamic_shifting": false, "use_exponential_sigmas": false, "use_flow_sigmas": true, "use_karras_sigmas": false}, "sigmas": [0.99999899, 0.98277646, 0.964324, 0.94450617, 0.92316568, 0.90011996, 0.87515622, 0.84802449, 0.81842965, 0.78602028, 0.75037479, 0.7109831, 0.66722184, 0.6183213, 0.56331962, 0.50099897, 0.42979452, 0.34766075, 0.25187218, 0.13871495, 0.0], "step": "flow_grpo wan sde_step_with_logprob; deterministic = Euler ODE step sample + dt * v", "step_index": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], "text_encoder_dtype": "bf16", "timesteps": [999, 982, 964, 944, 923, 900, 875, 848, 818, 786, 750, 710, 667, 618, 563, 500, 429, 347, 251, 138], "transformer_dtype": "bf16", "vae_dtype": "float32", "width": 416}
+evaluators:
+  - id: t2v.wan_ocr_doctr_items@0.1
+    # EXT-6: SHA-256 of the canonical JSON {evaluator, metric, direction, scorer}; scorer video_ocr_accuracy_doctr with
+    # code_sha256 = SHA-256 of runtime/eval_videos.py (sha256:f628fb1abcd8...; the gate ran sha256:de9c2e89...).
+    manifest_hash: "sha256:843d424dde74dccd211e5b30a3eb6e6a6cba29be0a9b31cb748c3a3be1783330"
+multiplicity:
+  plan: single_gate
+  family: null
+analysis_code_version: ptc-hub 0.2.0
+bootstrap:
+  replicates: 10000
+  seed: 20261115
+pairing:
+  max_unpaired: 0
+min_paired: 10
+contamination:
+  allow_exact_overlap: false

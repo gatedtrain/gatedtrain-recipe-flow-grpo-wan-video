@@ -1,0 +1,56 @@
+# Area "video generation" fixture registration (verifier-owned; prototype, unpromotable). tests/README.md section
+# 11.25. Rendered by tests/_flow_grpo_wan.py: {item_set_hash} is the manifest hash of the fixture item set, {sampler}
+# the deployment sampler of the fixture cuts (the GPU smoke cut's sampler.json, as JSON flow), {evaluator_hash} the
+# identity hash of t2v.wan_ocr_doctr_items@0.1 (EXT-6).
+# The shape of the area's registration (runtime/README.md "Decisions" and
+# "Items, training shard and power"): deciding T3 metric ocr_b_acc (docTR, best-matching substring per frame, mean over
+# all 17 frames, higher is better, [0, 1], construct-aligned with the PaddleOCR video reward, R15-1), superiority with
+# margin 0, K 1, eval seed 11, alpha 0.025 one-sided, power 0.8, sigma_plan fixed (the area's sigma comes from the
+# smoke). Fixture sigma 0.3 and planning effect 0.15: n_required = 32 <= the scenario's 40 items.
+registration_version: 1
+registration_id: ext-flow-grpo-wan-fixture-superiority-v1
+signed_by: prototype-unsigned
+workflow: ext-flow-grpo-wan-fixture
+gate: quality_gate
+clause:
+  type: superiority
+  metric: ocr_b_acc
+  direction: higher_is_better
+  margin: 0.0
+  alpha: 0.025
+  power: 0.8
+  planning_effect: 0.15
+  sigma_plan: fixed
+  unit: item
+  samples_per_item: 1
+  eval_seeds: [11]
+  interval: cluster_bootstrap
+  blocking: true
+margin_justification: Fixture value (superiority, delta_sup = 0).
+sigma_pilot:
+  sigma: 0.3
+  source: Fixture value; the area's sigma is fixed from the smoke run (max(1.5 x ucb80(s_pilot), sqrt(2) x ucb80(s_base))).
+baseline_pilot_mean: 0.17
+construct_alignment: >-
+  ocr_b_acc measures the construct of the training reward video_ocr_paddleocr (the quoted text is legibly rendered in
+  the video) with another OCR engine (docTR, not PaddleOCR), another formula (the best-matching substring) and another
+  aggregate (all 17 frames, zeros included). A pass shows that the reward's gain transfers to an independent OCR
+  engine over the whole clip, not that the videos are better otherwise.
+eval_distribution:
+  item_set_hash: "{item_set_hash}"
+sampler: {sampler}
+evaluators:
+  - id: t2v.wan_ocr_doctr_items@0.1
+    manifest_hash: "{evaluator_hash}"
+multiplicity:
+  plan: single_gate
+  family: null
+analysis_code_version: gatedtrain 0.3.0
+bootstrap:
+  replicates: 10000
+  seed: 20261114
+pairing:
+  max_unpaired: 0
+min_paired: 10
+contamination:
+  allow_exact_overlap: false

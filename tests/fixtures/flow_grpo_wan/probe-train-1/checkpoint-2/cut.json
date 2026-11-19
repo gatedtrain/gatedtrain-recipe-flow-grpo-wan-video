@@ -1,0 +1,31 @@
+{
+  "created_at": "2026-11-14T20:32:54Z",
+  "deployable": [
+    "pytorch_lora_weights.safetensors",
+    "adapter_config.json",
+    "sampler.json",
+    "base_ref.json"
+  ],
+  "ema": false,
+  "epoch": 2,
+  "files": {
+    "adapter_config.json": "sha256:6d363ad5632185ecbd2b9898c7d7c6ac68b72f45a16016cb6530633046d689fe",
+    "base_ref.json": "sha256:a95c8fef3849dd19081196c6eba6db1a16a9f76642f84b7eec53c1600e2a2351",
+    "pytorch_lora_weights.safetensors": "sha256:d72c9d56ed55d2a3ef3603ea9abd7e7fe6b2d1327074d75233965aae7d076573",
+    "sampler.json": "sha256:98fbd58a77bb6babda6aa1d84b3777979bd78be943f878f5fbe269bd801ef100",
+    "trainer_state.json": "sha256:b3f3c4bdc5a29a8ec2f87bc2aff91f006783095ab046d0920437d7e3eed05b48"
+  },
+  "global_step": 4,
+  "profile": "smoke",
+  "sampler_code_sha256": "sha256:dad91e418fe717bf2ad0b3fe2727dfdea36a316b87c2240efc0aa14955d90300",
+  "samples_consumed": 28,
+  "samples_filtered": 4,
+  "schema": "ptc_mm.flow_grpo_wan_cut",
+  "schema_version": "1.0",
+  "script_sha256": "sha256:ad8db67d2dc478183abeaef0d461ffb126de83d72943eca86dc5c531158870ee",
+  "seed": 5000,
+  "tags": [
+    "prototype",
+    "unpromotable"
+  ]
+}
