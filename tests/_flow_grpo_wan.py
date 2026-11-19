@@ -59,11 +59,13 @@ import atexit
 import hashlib
 import json
 import os
+import pwd
 import random
 import shutil
 import struct
 import sys
 import tempfile
+import unittest
 from pathlib import Path
 from typing import Any, Callable
 
@@ -82,6 +84,17 @@ REAL_AREA5 = Path(os.environ.get(OCR_RUNTIME_ENV) or REPO.parent / "gatedtrain-r
 # The GPU runs (probe-train-1/, probe-base-1/, full-1/) and their launch records, when the host has them.
 REAL_OUT = Path(os.environ.get(OUTPUTS_ENV) or "/nonexistent/flow-grpo-wan-video-outputs")
 REAL_RECORDS = Path(os.environ.get(RECORDS_ENV) or "/nonexistent/flow-grpo-wan-video-records")
+
+
+def run_user() -> str:
+    """The container's `<uid>:<gid>` in fixture requests and records: the uid running the tests and its primary group,
+    so the output directories the tests create are owned by the container's uid (EXT-63) whoever runs them. The launch
+    rules refuse root, so a test that needs it skips under uid 0."""
+    uid = os.getuid()
+    if uid == 0:
+        raise unittest.SkipTest("the launch rules refuse a container running as root (uid 0); run the tests as a "
+                                "non-root user")
+    return f"{uid}:{pwd.getpwuid(uid).pw_gid}"
 
 
 def _stand_in_ocr_runtime() -> None:
@@ -733,7 +746,7 @@ class WanScenario:
                "framework": {"name": "diffusers", "version": "0.42.1", "commit": None},
                "training_seed": SEED, "gpus": True, "argv": self.argv() + ["--epochs", "3"],
                "mounts": self.mounts(self.stage_out), "tmpfs": ["/tmp"], "network": "none", "network_reason": None,
-               "user": "1000:1000", "env_names": list(ENV_NAMES), "gpu_est_h": 3.5, "gpu_used_h": 6.0,
+               "user": run_user(), "env_names": list(ENV_NAMES), "gpu_est_h": 3.5, "gpu_used_h": 6.0,
                "output_dir": str(self.stage_out), "output_root": str(self.output_root),
                "gpu_step_sha256": file_sha256(self.host_work / "bin" / "gpu-step.sh"), "allow_network": False,
                "interpreter_path": f"{CPYTHON}/bin/python3.12",
@@ -761,7 +774,7 @@ class WanScenario:
         req = {"area": AREA, "label": f"mm-a3-video-{profile}", "host_work": str(self.host_work),
                "runtime": {"kind": "venv_in_container", "image": IMAGE, "venv_lock": str(self.lock)},
                "framework": {"name": "diffusers", "version": "0.42.1", "commit": None}, "training_seed": SEED,
-               "gpus": True, "network": "none", "network_reason": None, "user": "1000:1000", "env": dict(ENV),
+               "gpus": True, "network": "none", "network_reason": None, "user": run_user(), "env": dict(ENV),
                "mounts": self.mounts(out), "tmpfs": ["/tmp"], "output_dir": str(out), "gpu_est_h": 0.3,
                "argv": self.argv(profile if self.attempt == 1 else {"smoke": "smoke2", "full": "full2"}[profile])}
         req.update(overrides)
