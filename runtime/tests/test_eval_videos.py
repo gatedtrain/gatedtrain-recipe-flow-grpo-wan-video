@@ -133,19 +133,28 @@ class TestArgsAndItems(unittest.TestCase):
 
     def test_items_are_area5_bytes(self):
         src = json.loads(ev.ITEMS_SOURCE_JSON.read_text(encoding="utf-8"))
+        # The training shard is not in the repository (.gitignore): `python eval_videos.py --copy-items` copies it
+        # from the SD3.5 OCR recipe's runtime. Without it only the committed files are checked and the test skips.
+        absent = [f"{d}/{n}" for d, (_, names) in ev.ITEM_SOURCES.items() for n in names
+                  if not (AREA / d / n).exists()]
+        self.assertLessEqual(set(absent), {"prompts/train.jsonl"})
         for dst_name, (src_dir, names) in ev.ITEM_SOURCES.items():
-            self.assertEqual(sorted(p.name for p in (AREA / dst_name).iterdir()), sorted(names))
-            for n in names:
+            present = [n for n in names if f"{dst_name}/{n}" not in absent]
+            self.assertEqual(sorted(p.name for p in (AREA / dst_name).iterdir()), sorted(present))
+            for n in present:
                 self.assertEqual((AREA / dst_name / n).read_bytes(), (src_dir / n).read_bytes())
                 self.assertEqual(src["copies"][dst_name]["files"][n]["sha256"], ev.sha256_file(src_dir / n))
         self.assertEqual(ev.sha256_file(AREA / "items" / "items.jsonl"),
                          "sha256:3884dcff4c2e44d489ef02f6bbcf11f45cc82489d38527e1b8199be35220f3e8")
-        self.assertEqual(ev.sha256_file(AREA / "prompts" / "train.jsonl"),
-                         "sha256:75361afde0224ac65b1ef03ad96d8d00cb91793c9aa0f52ce50d860801585fb8")
+        if not absent:
+            self.assertEqual(ev.sha256_file(AREA / "prompts" / "train.jsonl"),
+                             "sha256:75361afde0224ac65b1ef03ad96d8d00cb91793c9aa0f52ce50d860801585fb8")
         items = ev.read_items(AREA / "items")
         self.assertEqual(len(items), 400)
         self.assertTrue(all(ev.target_text(it["prompt"]) == it["target"] for it in items))
         self.assertTrue(all(it["target"].replace(" ", "") for it in items))
+        if absent:
+            self.skipTest(f"{', '.join(absent)} absent (not committed); run `python eval_videos.py --copy-items`")
 
     def test_derive_seed_equals_area5(self):
         a5 = load_by_path("a5_eval_images", AREA5_EVAL)

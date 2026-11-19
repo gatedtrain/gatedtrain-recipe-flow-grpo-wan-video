@@ -81,7 +81,8 @@ installed as well (the two sibling adapters stay apart). The real-file tests rea
 GPU runs and their launch records when `GATEDTRAIN_RECIPE_FLOW_GRPO_WAN_VIDEO_OUTPUTS` and
 `GATEDTRAIN_RECIPE_FLOW_GRPO_WAN_VIDEO_RECORDS` name them, and skip what is absent. The scripts' own CPU tests
 (`runtime/tests/`) run with the OCR runtime's venv and a flow_grpo clone at `879042cf` (`FLOW_GRPO_DIR`, default
-`../flow_grpo` beside this repository); see their docstrings.
+`../flow_grpo` beside this repository); see their docstrings. Their check of the copied training shard skips until
+`python runtime/eval_videos.py --copy-items` has copied `runtime/prompts/train.jsonl` from the OCR runtime.
 
 ## Data and licenses
 
