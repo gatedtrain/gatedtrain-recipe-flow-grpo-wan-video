@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import ast
 import contextlib
+import importlib.machinery
 import importlib.util
 import io
 import json
@@ -29,6 +30,7 @@ import re
 import shutil
 import stat
 import struct
+import subprocess
 import sys
 import tempfile
 import types
@@ -64,14 +66,36 @@ def levenshtein(a: str, b: str) -> int:
 
 
 HAVE_RAPIDFUZZ = importlib.util.find_spec("rapidfuzz") is not None
-if not HAVE_RAPIDFUZZ:
-    _rf = types.ModuleType("rapidfuzz")
-    _rf_distance = types.ModuleType("rapidfuzz.distance")
-    _rf_lev = types.ModuleType("rapidfuzz.distance.Levenshtein")
-    _rf_lev.distance = levenshtein
-    _rf.distance = _rf_distance
-    _rf_distance.Levenshtein = _rf_lev
-    sys.modules.update({"rapidfuzz": _rf, "rapidfuzz.distance": _rf_distance, "rapidfuzz.distance.Levenshtein": _rf_lev})
+
+
+def rapidfuzz_stand_in() -> dict:
+    """`rapidfuzz.distance.Levenshtein.distance` as the scripts import it (inside the reward functions), backed by
+    levenshtein() above; each module has a spec, as an imported module does."""
+    mods = {n: types.ModuleType(n) for n in ("rapidfuzz", "rapidfuzz.distance", "rapidfuzz.distance.Levenshtein")}
+    for name, m in mods.items():
+        m.__spec__ = importlib.machinery.ModuleSpec(name, None)
+    mods["rapidfuzz.distance.Levenshtein"].distance = levenshtein
+    mods["rapidfuzz"].distance = mods["rapidfuzz.distance"]
+    mods["rapidfuzz.distance"].Levenshtein = mods["rapidfuzz.distance.Levenshtein"]
+    return mods
+
+
+_STAND_INS: dict = {}
+
+
+def setUpModule():
+    # installed for this module's tests only; tearDownModule removes exactly these entries, so no other test module
+    # (or a later find_spec/import) sees a fake rapidfuzz
+    if not HAVE_RAPIDFUZZ:
+        _STAND_INS.update(rapidfuzz_stand_in())
+        sys.modules.update(_STAND_INS)
+
+
+def tearDownModule():
+    for name, m in _STAND_INS.items():
+        if sys.modules.get(name) is m:
+            del sys.modules[name]
+    _STAND_INS.clear()
 
 
 def load_script(path: Path, name: str):
@@ -559,6 +583,24 @@ class TestShortSplit(unittest.TestCase):
         self.assertEqual([r["item"] for r in items], ["ocr-test-0003", "ocr-test-0000", "ocr-test-0002"])
         self.assertEqual([r["prompt_id"] for r in shard], ["ocr-train-00003"])     # file order, disjoint by target
         self.assertEqual((n_short, dropped_prompt, dropped_target), (3, 1, 1))
+
+
+class TestRapidfuzzStandIn(unittest.TestCase):
+    """The rapidfuzz stand-in exists only while this module's tests run (setUpModule to tearDownModule): importing
+    this file leaves sys.modules alone, and the stand-in has a module spec, so importlib.util.find_spec works on it."""
+
+    @unittest.skipIf(HAVE_RAPIDFUZZ, "rapidfuzz is installed: no stand-in")
+    def test_scoped_to_this_module(self):
+        self.assertIsNotNone(importlib.util.find_spec("rapidfuzz.distance.Levenshtein"))
+        code = "import sys, test_runtime; print(sorted(n for n in sys.modules if n.split('.')[0] == 'rapidfuzz'))"
+        got = subprocess.run([sys.executable, "-c", code], cwd=Path(__file__).resolve().parent, capture_output=True,
+                             text=True, check=True)
+        self.assertEqual(got.stdout.strip(), "[]")
+        tearDownModule()
+        try:
+            self.assertEqual([n for n in sys.modules if n.split(".")[0] == "rapidfuzz"], [])
+        finally:
+            setUpModule()
 
 
 if __name__ == "__main__":
