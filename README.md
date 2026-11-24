@@ -1,30 +1,52 @@
 # gatedtrain recipe: Flow-GRPO Wan2.1 video OCR
 
-A [gatedtrain](https://github.com/gatedtrain/gatedtrain) recipe: Flow-GRPO trains a LoRA on Wan2.1-T2V-1.3B (Diffusers layout) to
-render the quoted text of a prompt legibly in a short video (flow_grpo's OCR task on video), with a minimal port of
-flow_grpo's `scripts/train_wan2_1.py` (`yifan123/flow_grpo` at `879042cf`, MIT) on diffusers + peft. The training
-reward is flow_grpo's video OCR reward with PaddleOCR PP-OCRv4 (every 4th frame); gatedtrain gates the trained LoRA against
-the base model on held-out prompts, scored over all frames by a second OCR engine (docTR). Prototype.
+This recipe teaches a small text-to-video model to render the quoted text of a prompt legibly in a short
+video (flow_grpo's OCR task on video), and lets [gatedtrain](https://github.com/gatedtrain/gatedtrain) decide whether the trained model really is better than the one
+it started from. Flow-GRPO trains a LoRA on Wan2.1-T2V-1.3B (Diffusers layout), with a minimal port of flow_grpo's
+`scripts/train_wan2_1.py` (`yifan123/flow_grpo` at `879042cf`, MIT) on diffusers and peft. The training reward is
+flow_grpo's video OCR reward with PaddleOCR PP-OCRv4 (every 4th frame). gatedtrain then gates the trained LoRA against
+the base model on held-out prompts, scored over all frames by a second OCR engine (docTR), by a rule registered before
+training.
 
-## Layout
+A recipe is a ready-made external run for gatedtrain: the training code with its locked environment, plus an
+*adapter*, the small plugin through which gatedtrain reads the run's outputs. gatedtrain does not start the training;
+you run it.
 
-| Path | What |
-|---|---|
-| `src/gatedtrain_recipe_flow_grpo_wan_video/` | the gatedtrain adapter `flow_grpo_wan` (`adapter.py`, a subclass of gatedtrain's `gatedtrain.families.flow_grpo.FlowGrpoAdapter`) and its registry rows (`rows.py`), registered through the `gatedtrain.adapters` entry point |
-| `runtime/` | what runs in the container: `train_flow_grpo_wan.py` (attempt 1) and `train_flow_grpo_wan_v2.py` (attempt 2, the amendment: other profiles and prompts only), `eval_videos.py` (video generation and both OCR scorers), `make_short_split.py` (attempt 2's short-target item set and training shard), `fetch_models.py` (downloads the Wan2.1 base and hashes every file into `models/MODELS.json`), the registered item sets (`items/`, `items-short/`), the training shards' metadata (`prompts/prompts_meta.json`, `prompts-short/prompts_meta.json`), `ITEMS-SOURCE.json`, the design notes (`runtime/README.md`) and the scripts' own CPU tests (`runtime/tests/`) |
-| `tests/` | the adapter's tests on fixture runs (no GPU, no model needed) and gatedtrain's conformance check |
-| `container/Containerfile` | the runtime image `gatedtrain-a5-runtime:1`: a byte-identical copy of the SD3.5 OCR recipe's `container/Containerfile` (CUDA base pinned by digest plus X11/GL libraries), so this repository builds its image on its own |
-| `results/2026-11-15/gate/` | the gate files of both attempts (`spec.yaml`/`registration.yaml`: attempt 1; `spec-v2.yaml`/`registration-v2.yaml`: attempt 2, which amends attempt 1; redacted copies, see `RESULT.md`) |
+This is a prototype: the result below is two registered attempts, not a benchmark claim.
 
-Not in the repository (git-ignored, regenerated): `runtime/models/wan2.1-t2v-1.3b/` (`fetch_models.py`, Apache-2.0,
-about 28.9 GB; revision and file hashes in `models/MODELS.json`), `runtime/hf-home/` and `runtime/hf-meta/`
-(huggingface_hub's cache and download metadata), `runtime/prompts/train.jsonl` (a byte copy of the SD3.5 OCR recipe's
-`runtime/prompts/train.jsonl`; hashes in `runtime/ITEMS-SOURCE.json` and `prompts_meta.json`),
-`runtime/prompts-short/train.jsonl` (`make_short_split.py`; its hash is in `prompts-short/prompts_meta.json`).
+## How it works
 
-In the code and the notes, "area 5" (`area5-sd35`, `<sd35-ocr-runtime>`) is the SD3.5 OCR recipe
-([gatedtrain-recipe-flow-grpo-sd35-ocr](https://github.com/gatedtrain/gatedtrain-recipe-flow-grpo-sd35-ocr)) and its `runtime/`, whose
-port this recipe was built from, and "area 3 (video)" (`area3-video`) is this recipe's `runtime/`.
+```mermaid
+flowchart LR
+    fetch["fetch_models.py:<br/>Wan2.1 base, pinned"] --> train["train_flow_grpo_wan.py or<br/>train_flow_grpo_wan_v2.py in a container<br/>(Flow-GRPO, LoRA)"]
+    short["make_short_split.py:<br/>short-target items and training shard<br/>(attempt 2)"] --> train
+    train --> cuts["LoRA cuts and<br/>consumption logs"]
+    cuts --> eval["eval_videos.py: base and trained model<br/>on held-out prompts, scored by docTR"]
+    eval --> arms["Arm files: per-prompt OCR scores"]
+    arms --> collect["gatedtrain ext-collect"]
+    cuts -->|"read through the adapter flow_grpo_wan"| collect
+    collect --> gate{"Gate"}
+    gate --> report["Gate report, consumption ledger"]
+```
+
+`gatedtrain ext-launch` checks the run request and prints the container command; you run it. The steps, flags and
+arm files are explained in gatedtrain's [External runs](https://gatedtrain.github.io/gatedtrain/external-runs/) guide.
+The container image, Python environment and OCR models come from the SD3.5 OCR recipe (see the dependency below).
+
+## Result
+
+Two registered attempts. The deciding metric in both is `ocr_b_acc` (docTR accuracy over all 17 frames of each video).
+Attempt 1 failed. Attempt 2 is an amendment of attempt 1, registered after it: it uses short target texts (at most 2
+words) only and a larger batch, so its PASS holds for that narrower item set.
+
+| | Baseline (Wan2.1-T2V-1.3B) | Candidate | Gate |
+|---|---|---|---|
+| Attempt 1: 400 items, 60 epochs, cut 60 | 0.1554 | 0.1469 | **FAIL**: -0.0086, 95% cluster-bootstrap interval [-0.0201, 0.0022], p 0.94 |
+| Attempt 2: 288 short-target items, 100 epochs, cut 100, 11.22 GPU-hours | 0.1456 | 0.1774 | **PASS**: +0.0318, 95% cluster-bootstrap interval [0.0152, 0.0494], p <= 7.3e-05 |
+
+`RESULT.md` has the full record of both attempts: the registrations, the cause found for attempt 1, power, overlap
+with training, the impact queries and the re-collection with this repository's adapter. The gate files are under
+`results/2026-11-15/`.
 
 ## Dependency on the SD3.5 OCR recipe
 
@@ -69,6 +91,26 @@ The scripts load model weights from safetensors files whose hashes they check (`
 recipe's `MODELS.json`, each cut's `cut.json`). Load only bases, OCR models and cuts you produced or fetched with these
 scripts.
 
+## Layout
+
+| Path | What |
+|---|---|
+| `src/gatedtrain_recipe_flow_grpo_wan_video/` | the gatedtrain adapter `flow_grpo_wan` (`adapter.py`, a subclass of gatedtrain's `gatedtrain.families.flow_grpo.FlowGrpoAdapter`) and its registry rows (`rows.py`), registered through the `gatedtrain.adapters` entry point |
+| `runtime/` | what runs in the container: `train_flow_grpo_wan.py` (attempt 1) and `train_flow_grpo_wan_v2.py` (attempt 2, the amendment: other profiles and prompts only), `eval_videos.py` (video generation and both OCR scorers), `make_short_split.py` (attempt 2's short-target item set and training shard), `fetch_models.py` (downloads the Wan2.1 base and hashes every file into `models/MODELS.json`), the registered item sets (`items/`, `items-short/`), the training shards' metadata (`prompts/prompts_meta.json`, `prompts-short/prompts_meta.json`), `ITEMS-SOURCE.json`, the design notes (`runtime/README.md`) and the scripts' own CPU tests (`runtime/tests/`) |
+| `tests/` | the adapter's tests on fixture runs (no GPU, no model needed) and gatedtrain's conformance check |
+| `container/Containerfile` | the runtime image `gatedtrain-a5-runtime:1`: a byte-identical copy of the SD3.5 OCR recipe's `container/Containerfile` (CUDA base pinned by digest plus X11/GL libraries), so this repository builds its image on its own |
+| `results/2026-11-15/gate/` | the gate files of both attempts (`spec.yaml`/`registration.yaml`: attempt 1; `spec-v2.yaml`/`registration-v2.yaml`: attempt 2, which amends attempt 1; redacted copies, see `RESULT.md`) |
+
+Not in the repository (git-ignored, regenerated): `runtime/models/wan2.1-t2v-1.3b/` (`fetch_models.py`, Apache-2.0,
+about 28.9 GB; revision and file hashes in `models/MODELS.json`), `runtime/hf-home/` and `runtime/hf-meta/`
+(huggingface_hub's cache and download metadata), `runtime/prompts/train.jsonl` (a byte copy of the SD3.5 OCR recipe's
+`runtime/prompts/train.jsonl`; hashes in `runtime/ITEMS-SOURCE.json` and `prompts_meta.json`),
+`runtime/prompts-short/train.jsonl` (`make_short_split.py`; its hash is in `prompts-short/prompts_meta.json`).
+
+In the code and the notes, "area 5" (`area5-sd35`, `<sd35-ocr-runtime>`) is the SD3.5 OCR recipe
+([gatedtrain-recipe-flow-grpo-sd35-ocr](https://github.com/gatedtrain/gatedtrain-recipe-flow-grpo-sd35-ocr)) and its `runtime/`, whose
+port this recipe was built from, and "area 3 (video)" (`area3-video`) is this recipe's `runtime/`.
+
 ## Tests
 
 ```bash
@@ -97,10 +139,6 @@ GPU runs and their launch records when `GATEDTRAIN_RECIPE_FLOW_GRPO_WAN_VIDEO_OU
 | docTR db_resnet50 and crnn_vgg16_bn | deciding metric (OCR engine B), from the SD3.5 OCR recipe's runtime | Apache-2.0 | Mindee, [mindee/doctr](https://github.com/mindee/doctr) release assets (file SHA-256s in the SD3.5 recipe's `MODELS.json`) |
 | Runtime image | every launch | the SD3.5 OCR recipe's `container/Containerfile`: `nvidia/cuda` base image under NVIDIA's container license terms, Ubuntu packages under their own licenses | see that recipe |
 | Python packages (diffusers, peft, torch, transformers, paddleocr, paddlepaddle, python-doctr, rapidfuzz, ...) | the runtime venv | their own licenses (rapidfuzz, the edit distance of the OCR scores: MIT; the published runs used python-Levenshtein, `RESULT.md`) | the SD3.5 OCR recipe's `runtime/uv.lock` |
-
-## Result
-
-See `RESULT.md`.
 
 ## Responsible use
 
