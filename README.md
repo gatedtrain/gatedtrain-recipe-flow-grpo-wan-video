@@ -42,7 +42,9 @@ words) only and a larger batch, so its PASS holds for that narrower item set.
 | | Baseline (Wan2.1-T2V-1.3B) | Candidate | Gate |
 |---|---|---|---|
 | Attempt 1: 400 items, 60 epochs, cut 60 | 0.1554 | 0.1469 | **FAIL**: -0.0086, 95% cluster-bootstrap interval [-0.0201, 0.0022], p 0.94 |
-| Attempt 2: 288 short-target items, 100 epochs, cut 100, 11.22 GPU-hours | 0.1456 | 0.1774 | **PASS**: +0.0318, 95% cluster-bootstrap interval [0.0152, 0.0494], p <= 7.3e-05 |
+| Attempt 2: 288 short-target items, 100 epochs, cut 100, 11.22 GPU-hours | 0.1456 | 0.1774 | **PASS** under the original registration; **INCONCLUSIVE (post_hoc)** under the registration amended for the renames: +0.0318, 95% cluster-bootstrap interval [0.0152, 0.0494], p <= 7.3e-05 |
+
+The amendment is post hoc: the scorer the evaluator's identity covers changed after both gates, so the amendments record the current scorer. Under the amended registration a post-hoc gate cannot PASS, and the FAIL of attempt 1 is unchanged.
 
 `RESULT.md` has the full record of both attempts: the registrations, the cause found for attempt 1, power, overlap
 with training, the impact queries and the re-collection with this repository's adapter. The gate files are under
